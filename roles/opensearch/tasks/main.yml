@@ -1,0 +1,28 @@
+- name: Download and import OpenSearch PGP key
+  apt_key:
+    url: "{{ opensearch_apt_key_url }}"
+  become: true
+
+- name: Add OpenSearch APT repository
+  apt_repository:
+    repo: "{{ opensearch_apt_repo_url }}"
+  become: true
+
+- name: Update APT package index
+  apt:
+    update_cache: yes
+  become: true
+
+- name: Install OpenSearch
+  apt:
+    name: opensearch
+    state: present
+  become: true
+
+- name: Enable and start OpenSearch service
+  systemd:
+    name: opensearch.service
+    enabled: yes
+    state: started
+  become: true
+

@@ -1,0 +1,43 @@
+#- name: Switch to root user
+#  become: yes
+#  become_method: sudo
+
+- name: Install apt-transport-https
+  apt:
+    name: apt-transport-https
+    state: present
+    update_cache: yes
+
+- name: Download and add Elasticsearch GPG key
+  shell: "wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | apt-key add -"
+
+- name: Add Elasticsearch APT repository
+  apt_repository:
+    repo: "deb https://artifacts.elastic.co/packages/7.x/apt stable main"
+    state: present
+
+- name: Update APT cache and install Elasticsearch
+  apt:
+    name: elasticsearch
+    state: present
+    update_cache: yes
+
+- name: Start Elasticsearch service
+  service:
+    name: elasticsearch
+    state: started
+    #- name: Exit root user
+    #become: false
+- name: Set vm.max_map_count kernel parameter
+  sysctl:
+     name: vm.max_map_count
+     value: 262144
+     state: present
+     sysctl_file: /etc/sysctl.d/elasticsearch.conf
+- name: Restart Elasticsearch service
+  service:
+     name: elasticsearch
+     state: restarted
+
+
+

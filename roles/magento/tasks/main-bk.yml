@@ -1,0 +1,130 @@
+---
+- name: Set Magento Access Keys for Composer
+  environment:
+    COMPOSER_ALLOW_SUPERUSER: 1
+  command: composer global config http-basic.repo.magento.com  dda8215d26f94e4a38075255235947b3  fcec71213a9219685d823c4009e65432 
+
+
+- name : clean up magento2 directory
+  command : sudo rm -rf {{magento_dir}}
+
+
+- name: Create the Magento Open Source Project
+  environment:
+   COMPOSER_ALLOW_SUPERUSER: 1
+  command: composer create-project --repository=https://repo.magento.com/ magento/project-community-edition {{ magento_dir }}
+
+- name: Set ownership of Magento2 directory
+  become: true
+  become_user: root
+  file:
+    path: /var/www/html/magento2/
+    owner: www-data
+    group: www-data
+    recurse: yes
+
+- name: Set permissions of Magento2 directory
+  become: true
+  become_user: root
+  file:
+    path: /var/www/html/magento2/
+    mode: "0755"
+    recurse: yes
+
+- name: Set Files Permissions to g+w
+  shell: find var generated vendor pub/static pub/media app/etc -type f -exec chmod g+w {} \;
+  args:
+    chdir: "{{ magento_dir }}"
+
+- name: Set Directories Permissions to g+ws
+  shell: find var generated vendor pub/static pub/media app/etc -type d -exec chmod g+ws {} \;
+  args:
+    chdir: "{{ magento_dir }}"
+
+- name: Set Files and Directories Group User
+  file:
+    dest: "{{ magento_dir }}"
+    group: www-data
+    recurse: yes
+
+- name: Set Permission u+x to bin/magento
+  file:
+    path: "{{ magento_dir }}/bin/magento"
+    mode: u+x
+
+- name: Install Magento
+  shell: |
+    php bin/magento setup:install \
+    --base-url="{{ base_url }}" \
+    --db-host="{{ db_host }}" \
+    --db-name="{{ db_name }}" \
+    --db-user="{{ db_user }}" \
+    --db-password="{{ db_password }}" \
+    --backend-frontname="{{ backend_frontname }}" \
+    --admin-firstname="{{ admin_firstname }}" \
+    --admin-lastname="{{ admin_lastname }}" \
+    --admin-email="{{ admin_email }}" \
+    --admin-user="{{ admin_user }}" \
+    --admin-password="{{ admin_password }}" \
+    --language="{{ language }}" \
+    --currency="{{ currency }}" \
+    --timezone="{{ timezone }}" \
+    --use-rewrites="{{ use_rewrites }}"\
+    --search-engine="elasticsearch7" \                                   
+    --elasticsearch-host="localhost" \
+    --elasticsearch-port=9200 
+    #--magento_role_name: "magento_role"\
+    #--magento_user_name: "magento_user" \
+    #--magento_user_password: "magento@12345" \
+    # --elasticsearch_index_name: "magento" 
+  args:
+    chdir: "{{ magento_dir }}"
+
+
+    #- name: Start Magento service
+    #service:
+    #name: magento
+    #state: started
+
+
+
+
+
+- name: Change Magento Deployment Mode
+  shell: php bin/magento deploy:mode:set "{{ magento_mode }}"
+  args:
+    chdir: "{{ magento_dir }}"
+  when: magento_mode != 'default'
+
+- name: Deploy the Static Content
+  shell: php bin/magento setup:static-content:deploy -f
+  args:
+    chdir: "{{ magento_dir }}"
+
+- name: Run Reindexer
+  shell: php bin/magento indexer:reindex
+  args:
+    chdir: "{{ magento_dir }}"
+
+- name: Flush Cache
+  shell: php bin/magento cache:flush
+  args:
+    chdir: "{{ magento_dir }}"
+
+- name: Enable Cache
+  shell: php bin/magento cache:enable
+  args:
+    chdir: "{{ magento_dir }}"
+
+
+- name: removing already existing magento from cron
+  #command: sudo rm -rf "{{ magento_dir }}"
+  shell: php bin/magento cron:remove
+  args: 
+   chdir: "{{magento_dir }}"
+
+
+- name: Add Magento to Cron
+  shell: php bin/magento cron:install
+  args:
+    chdir: "{{ magento_dir }}"

@@ -1,0 +1,52 @@
+- name: Install Elasticsearch
+  apt:
+    name: elasticsearch
+    state: present
+    update_cache: yes
+
+- name: Enable and start Elasticsearch service
+  systemd:
+    name: elasticsearch
+    enabled: yes
+    state: started
+
+- name: Create role for Magento in Elasticsearch
+  uri:
+    url: "http://{{ elasticsearch_host }}:{{ elasticsearch_port }}/_security/role/{{ magento_role_name }}"
+    method: POST
+    body_format: json
+    body:
+      indices:
+        - names:
+            - "{{ elasticsearch_index_name }}*"
+          privileges:
+            - read
+            - write
+            - delete
+            - create_index
+            - manage
+    headers:
+      Content-Type: "application/json"
+    status_code: 200
+
+- name: Create user and assign Magento role in Elasticsearch
+  uri:
+    url: "http://localhost:9200/_security/user/magento_user"
+    method: POST
+    body_format: json
+    body:
+      password: "magento@12345"
+      roles:
+        - "magento_role"
+    headers:
+      Content-Type: "application/json"
+    status_code: 200
+
+
+- name: Configure Magento to use Elasticsearch
+  replace:
+  path: "/var/www/html/magento/app/etc/env.php"
+  regexp: "'engine' => 'mysql'"
+  replace: "'engine' => 'elasticsearch6',\n      'elasticsearch6_server_hostname' => 'localhost',\n      'elasticsearch6_server_port' => '9200',\n      'elasticsearch6_index_prefix' => 'magento',"
+  backup: yes
+

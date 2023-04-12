@@ -1,0 +1,47 @@
+- name: Update system packages
+  apt:
+    update_cache: yes
+    upgrade: dist
+
+- name: Install Java
+  apt:
+    name: "{{ java_packages }}"
+    state: present
+
+- name: Add Elasticsearch GPG key
+  get_url:
+    url: "{{ elasticsearch_key_url }}"
+    dest: /tmp/elasticsearch_key
+  become: true
+  become_user: root
+  changed_when: false
+
+- name: Add Elasticsearch repository
+  apt_key:
+    key_file: /tmp/elasticsearch_key
+    state: present
+  become: true
+  become_user: root
+
+- name: Add Elasticsearch APT repository
+  apt_repository:
+    repo: "{{ elasticsearch_repo_url }}"
+    state: present
+  become: true
+  become_user: root
+
+- name: Install Elasticsearch
+  apt:
+    name: elasticsearch
+    state: present
+  become: true
+  become_user: root
+
+- name: Enable and start Elasticsearch service
+  systemd:
+    name: elasticsearch
+    state: started
+    enabled: yes
+  become: true
+  become_user: root
+

@@ -1,0 +1,46 @@
+---
+
+- name: Install Apache 2 web server
+  apt:
+    name: apache2
+    state: latest
+  become: true
+
+- name: Backup default Apache2 configuration file
+  become: true
+  copy:
+    src: /etc/apache2/sites-available/000-default.conf
+    dest: /etc/apache2/sites-available/000-default.conf.bak
+
+- name: Update Apache2 virtual host document root
+  become: true
+  replace:
+    path: /etc/apache2/sites-available/000-default.conf
+    regexp: 'DocumentRoot \/var\/www\/html'
+    replace: 'DocumentRoot /var/www/html/magento'
+
+- name: Add Apache2 directory configuration
+  become: true
+  blockinfile:
+    path: /etc/apache2/sites-available/000-default.conf
+    block: |
+      <Directory /var/www/html/magento2/>
+          Options Indexes FollowSymLinks MultiViews
+          AllowOverride All
+          Order allow,deny
+          allow from all
+      </Directory>
+    marker: ""
+    insertbefore: "</VirtualHost>"
+
+- name: Enable Apache2 rewrite module
+  become: true
+  apache2_module:
+    name: rewrite
+    state: present
+
+- name: Restart Apache2 service
+  become: true
+  service:
+    name: apache2
+    state: restarted

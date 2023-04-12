@@ -1,0 +1,29 @@
+- name: Add Elasticsearch repository
+  apt_key:
+    url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    state: present
+  apt_repository:
+    repo: "deb https://artifacts.elastic.co/packages/7.x/apt stable main"
+    state: present
+    filename: elastic-7.x.list
+- name: Update packages
+  apt:
+    update_cache: yes
+- name: Install Elasticsearch
+  apt:
+    name: elasticsearch
+    state: present
+- name: Configure Elasticsearch
+  lineinfile:
+    path: /etc/elasticsearch/elasticsearch.yml
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  with_items:
+  - { regexp: "^#?network.host:", line: "network.host: localhost" }
+  - { regexp: "^#?http.port:", line: "http.port: 9200" }
+- name: Start Elasticsearch
+  systemd:
+    name: elasticsearch
+    state: started
+    enabled: yes
+

@@ -1,0 +1,75 @@
+---
+- name: Download MariaDB archive
+  get_url:
+    url: https://downloads.mariadb.com/MariaDB/mariadb-10.3.38/bintar-linux-systemd-x86_64/mariadb-10.3.38-linux-systemd-x86_64.tar.gz
+    dest: /tmp/mariadb-10.3.38-linux-systemd-x86_64.tar.gz
+
+- name: Extract MariaDB archive
+  become: yes
+  command: tar xvfz /tmp/mariadb-10.3.38-linux-systemd-x86_64.tar.gz -C /home/waqas creates=/home/waqas/mariadb-10.3.38-linux-systemd-x86_64
+
+- name: Rename extracted directory
+  become: yes
+  command: mv /home/waqas/mariadb-10.3.38-linux-systemd-x86_64 /opt/mariadb  creates=/opt/mariadb
+
+- name: Create symbolic link to mysql binary
+  become: yes
+  file:
+    src: /opt/mariadb/bin/mysql
+    dest: /usr/local/bin/mysql
+    state: link
+    force: yes
+
+    #- name: Initialize MariaDB data directory
+    # become: yes
+    #command: /opt/maria/scripts/mysql_install_db --datadir=/opt/mariadb/data creates=/opt/mariadb/data/mysql 
+
+  #- name: Start MariaDB server
+  #become: yes
+    #command: /opt/mariadb/bin/mysqld_safe --datadir=/opt/mariadb/data &
+
+
+
+- name: Update package list
+  apt:
+    update_cache: yes
+
+
+    #- name: Install MariaDB {{ mariadb_version }}
+    # apt:
+    #name: [
+    # "mariadb-server-{{ mariadb_version }}",
+    # "mariadb-client-{{ mariadb_version }}",
+    # "python-pip",
+    # "python-mysqldb"
+    # ]
+    #state: latest
+
+- name: Add MariaDB (MySQL) Configuration File
+  template:
+    src: my.cnf.j2
+    dest: /etc/mysql/mariadb.conf.d/my.cnf
+    owner: root
+    group: root
+    mode: '0644'
+    backup: yes
+  notify:
+  - Restart MariaDB Service
+
+    #- name: Start MariaDB Service
+    # service:
+    #name: mariadb
+    #state: started
+    #enabled: true
+
+- name: Set Magento Database User
+  mysql_user:
+    name: "{{ db_user }}"
+    password: "{{ db_password }}"
+    priv: "*.*:ALL"
+    state: present
+
+- name: Set Magento Database
+  mysql_db:
+    name: "{{ db_name }}"
+    state: present

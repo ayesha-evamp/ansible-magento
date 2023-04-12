@@ -1,0 +1,10 @@
+#[magento]
+#host01 ansible_host=240.0.0.0
+
+[magento]
+#host01 ansible_host=34.125.88.106
+
+#host01  ansible_host=localhost
+#root@localost  ansible_port=22
+
+localhost   ansible_connection=local
