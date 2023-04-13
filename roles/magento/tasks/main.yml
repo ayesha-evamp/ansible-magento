@@ -74,7 +74,7 @@
     --language="{{ language }}" \
     --currency="{{ currency }}" \
     --timezone="{{ timezone }}" \
-    --use-rewrites="{{ use_rewrites }}"\
+    --use-rewrites="1" \
     --search-engine="elasticsearch7" \                                   
     --elasticsearch-host="localhost" \
     --elasticsearch-port=9200 

@@ -1,47 +1,42 @@
-- name: Update system packages
+- name: Update package manager
+  become: true
   apt:
     update_cache: yes
-    upgrade: dist
 
-- name: Install Java
+- name: Install Java 8
+  become: true
   apt:
-    name: "{{ java_packages }}"
+    name: openjdk-8-jdk
     state: present
 
-- name: Add Elasticsearch GPG key
-  get_url:
-    url: "{{ elasticsearch_key_url }}"
-    dest: /tmp/elasticsearch_key
+- name: Import Elasticsearch GPG key
   become: true
-  become_user: root
-  changed_when: false
+  apt_key:
+    url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
 
-  #- name: Add Elasticsearch repository
-  #apt_key:
-  # key_file: /tmp/elasticsearch_key
-  # state: present
-  # become: true
-  #become_user: root
-
-- name: Add Elasticsearch APT repository
+- name: Add Elasticsearch repository
+  become: true
   apt_repository:
-    repo: "{{ elasticsearch_repo_url }}"
+    repo: 'deb https://artifacts.elastic.co/packages/7.x/apt stable main'
     state: present
-  become: true
-  become_user: root
+    filename: elastic-7.x
 
 - name: Install Elasticsearch
+  become: true
   apt:
     name: elasticsearch
     state: present
-  become: true
-  become_user: root
 
-- name: Enable and start Elasticsearch service
+- name: Enable Elasticsearch on boot
+  become: true
+  systemd:
+    name: elasticsearch
+    enabled: yes
+
+- name: Start Elasticsearch
+  become: true
   systemd:
     name: elasticsearch
     state: started
-    enabled: yes
-  become: true
-  become_user: root
+
 

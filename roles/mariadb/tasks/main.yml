@@ -1,5 +1,14 @@
 ---
 
+- name: Install python version for db
+  apt:
+    name: [
+      "python-pip",
+      "python-mysqldb"
+    ] 
+    state: latest
+
+
 - name: Add MariaDB 10.2 repository key
   apt_key:
     url: https://mariadb.org/mariadb_release_signing_key.asc

@@ -40,7 +40,7 @@ magento_private_key: fcec71213a9219685d823c4009e65432
 
 magento_mode: default
 
-base_url: http://34.125.238.210
+base_url: http://34.118.240.11
 use_rewrites: 1
 
 language: en_GB
